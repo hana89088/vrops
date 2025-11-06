@@ -13,8 +13,19 @@ from optparse import OptionParser
 from tools.helper import yaml_read
 
 
-def default_collectors():
-    collector_config = yaml_read(os.environ['COLLECTOR_CONFIG']).get('default_collectors')
+def default_collectors(config_path, logger):
+    if not config_path:
+        logger.error('Cannot load default collectors, collector config missing')
+        return None
+    try:
+        collector_config = yaml_read(config_path).get('default_collectors')
+    except FileNotFoundError as e:
+        logger.error(f'Collector config {config_path} not found: {e}')
+        return None
+    except OSError as e:
+        logger.error(f'Cannot read collector config {config_path}: {e}')
+        return None
+
     return [collector for collector in collector_config] if collector_config else None
 
 
@@ -58,9 +69,12 @@ def parse_params(logger):
         os.environ['PORT'] = options.port
     if options.config:
         os.environ['COLLECTOR_CONFIG'] = options.config
-    if not options.collectors:
+    collector_config_path = os.environ.get('COLLECTOR_CONFIG')
+    if not options.collectors and collector_config_path:
         logger.debug('Exporter using default collectors from config')
-        options.collectors = default_collectors()
+        options.collectors = default_collectors(collector_config_path, logger)
+    elif not options.collectors:
+        logger.debug('No collectors specified and no collector config set yet')
     if options.target:
         os.environ['TARGET'] = options.target
 
@@ -107,14 +121,12 @@ def initialize_collector_by_name(class_name, logger):
     try:
         class_module = importlib.import_module(f'collectors.{class_name}')
     except ModuleNotFoundError as e:
-        print('No Collector "BogusCollector" defined. Ignoring...')
         logger.error(f'No Collector {class_name} defined. {e}')
         return None
 
     try:
         return class_module.__getattribute__(class_name)()
     except AttributeError as e:
-        print('Unable to initialize "ClassNotDefinedCollector". Ignoring...')
         logger.error(f'Unable to initialize {class_name}. {e}')
         return None
 
@@ -123,5 +135,9 @@ if __name__ == '__main__':
     logger = logging.getLogger('vrops-exporter')
     options = parse_params(logger)
     global collectors
-    collectors = list(map(lambda c: initialize_collector_by_name(c, logger), options.collectors))
+    collectors = [collector for collector in map(lambda c: initialize_collector_by_name(c, logger), options.collectors or [])
+                  if collector is not None]
+    if not collectors:
+        logger.error('Cannot start, no valid collectors initialized')
+        sys.exit(1)
     run_prometheus_server(int(os.environ['PORT']), collectors)

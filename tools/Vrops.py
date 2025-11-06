@@ -13,16 +13,17 @@ logger = logging.getLogger('vrops-exporter')
 
 
 class Vrops:
-    def get_token(target):
+    def get_token(target, auth_source=None):
         url = "https://" + target + "/suite-api/api/auth/token/acquire"
         timeout = 40
         headers = {
             'Content-Type': "application/json",
             'Accept': "application/json"
         }
+        auth_source = auth_source or os.environ.get('AUTH_SOURCE', 'Local')
         payload = {
             "username": os.environ['USER'],
-            "authSource": "Local",
+            "authSource": auth_source,
             "password": os.environ['PASSWORD']
         }
         disable_warnings(exceptions.InsecureRequestWarning)
@@ -43,6 +44,9 @@ class Vrops:
             return response.json()["token"], response.status_code, response.elapsed.total_seconds()
         else:
             logger.error(f'Problem getting token from {target} : {response.text}')
+            if auth_source and auth_source != 'Local':
+                logger.error(f'Auth source {auth_source} failed for {target}. '
+                             f'Consider verifying credentials or falling back to Local authentication.')
             return False, response.status_code, response.elapsed.total_seconds()
 
     def get_adapter(self, target: str, token: str, adapterkind: str) -> (list, int):

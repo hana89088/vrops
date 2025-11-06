@@ -4,7 +4,7 @@
 # vrops-exporter
 Prometheus exporter for VMware vRealize Operations Manager
 
-###### Tested and compatible with vROps 6.5 up to vROps v8.6.2
+###### Tested and compatible with VMware Aria Operations (formerly vROps) 6.5 through 8.18.3
 
 ### Table of Contents
 
@@ -201,17 +201,23 @@ Start the container:
 
    This will start the inventory container and directly enter the shell. Note, you need to define your vROps target beforehand [tests/inventory_config.yaml](tests/inventory_config.yaml#L1-L2).
     
-       ./inventory.py --user foobaruser --password "foobarpw" --port 80 -m tests/inventory_config.yaml --vv
+       ./inventory.py --user foobaruser --password "foobarpw" --port 80 -m tests/inventory_config.yaml --auth-source Local --vv
     
    Now you need to enter the container a second time:
     
        docker exec -it <container_name> /bin/sh
         
    Now run the exporter:
-    
+
        ./exporter.py --port 9000 --inventory localhost --config tests/collector_config.yaml --target 'vrops-vcenter-test.company.com' --vv
-       
+
    You can also enter the container a third time to fetch the prometheus metrics from localhost (i.e. with wget)
+
+   > **Authentication source**
+   >
+   > VMware Aria Operations 8.18.3 introduces additional authentication realms. Use `--auth-source` (or the `AUTH_SOURCE`
+   > environment variable) to select the appropriate realm when acquiring SuiteAPI tokens. Older releases continue to work with the
+   > default `Local` source.
 
 ###### **3. Enviroment variables**
 
@@ -221,6 +227,7 @@ Start the container:
         PORT
         INVENTORY
         LOOPBACK
+        AUTH_SOURCE (optional, defaults to Local)
 
 
 ## Running in Kubernetes

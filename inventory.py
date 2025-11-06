@@ -23,6 +23,8 @@ def parse_params(logger):
     parser.add_option("-m", "--config", help="Path to the configuration to set properties of the resources kept in "
                                              "the inventory", action="store", dest="config")
     parser.add_option("-t", "--target", help="define target vrops", action="store", dest="target")
+    parser.add_option("-a", "--auth-source", help="specify authentication source (default: Local)",
+                      action="store", dest="auth_source")
     parser.add_option("-v", "--v", help="logging all level except debug", action="store_true", dest="info",
                       default=False)
     parser.add_option("-d", "--vv", help="logging all level including debug", action="store_true", dest="debug",
@@ -37,6 +39,8 @@ def parse_params(logger):
         os.environ['USER'] = options.user
     if options.password:
         os.environ['PASSWORD'] = options.password
+    if options.auth_source:
+        os.environ['AUTH_SOURCE'] = options.auth_source
     if options.info:
         logger.setLevel(logging.INFO)
         ConsoleHandler.setLevel(logging.INFO)
@@ -59,6 +63,8 @@ def parse_params(logger):
         os.environ['TARGET'] = options.target
     if options.sleep:
         os.environ['SLEEP'] = options.sleep
+    if 'AUTH_SOURCE' not in os.environ:
+        os.environ['AUTH_SOURCE'] = 'Local'
     if not options.sleep and 'SLEEP' not in os.environ:
         logger.info('Defaulting sleep to 60s')
         os.environ['SLEEP'] = "60"
