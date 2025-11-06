@@ -65,7 +65,8 @@ class TestLaunchExporter(TestCase):
         sys.argv = ['prog', '--port', '1234', '-i', 'inventory.some.url', '-m',
                     'tests/collector_config.yaml', '-t', 'vrops-vcenter-test.company.com']
         options = parse_params(logger)
-        self.assertEqual(options.collectors, default_collectors(), 'Default collector list does not match the default')
+        expected_collectors = default_collectors(os.environ.get('COLLECTOR_CONFIG'), logger)
+        self.assertEqual(options.collectors, expected_collectors, 'Default collector list does not match the default')
 
     # test with only one collector enabled
     def test_with_one_collector(self):
@@ -93,9 +94,9 @@ class TestLaunchExporter(TestCase):
     def test_without_params(self):
         os.environ.clear()
         sys.argv = ['prog']
-        with self.assertRaises(KeyError) as e:
+        with self.assertRaises(SystemExit) as e:
             parse_params(logger)
-        self.assertEqual(str(e.exception.args), "('COLLECTOR_CONFIG',)", 'no collector config file provided!')
+        self.assertEqual(e.exception.code, 1, 'Expected system exit when required parameters are missing')
 
 
 if __name__ == '__main__':

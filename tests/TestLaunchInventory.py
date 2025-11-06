@@ -34,6 +34,7 @@ class TestLaunchInventory(TestCase):
         self.assertEqual(os.getenv('INVENTORY_CONFIG'), 'tests/inventory_config.yaml', 'Config was not set')
         self.assertEqual(os.getenv('LOOPBACK'), '1', 'Loopback was not set correctly')
         self.assertEqual(os.getenv('SLEEP'), '180', 'Sleep time was not set correctly')
+        self.assertEqual(os.getenv('AUTH_SOURCE'), 'Local', 'Auth source should default to Local when not specified')
         self.assertEqual(logger.level, 10)
 
     # test with debug option off
@@ -49,6 +50,7 @@ class TestLaunchInventory(TestCase):
         self.assertEqual(os.getenv('INVENTORY_CONFIG'), 'tests/inventory_config.yaml', 'Config was not set')
         self.assertEqual(os.getenv('LOOPBACK'), '1', 'Loopback was not set correctly')
         self.assertEqual(os.getenv('SLEEP'), '180', 'Sleep time was not set correctly')
+        self.assertEqual(os.getenv('AUTH_SOURCE'), 'Local', 'Auth source should default to Local when not specified')
         self.assertEqual(logger.level, 20)
 
     def test_with_cli_and_env_params(self):
@@ -72,6 +74,7 @@ class TestLaunchInventory(TestCase):
         self.assertEqual(os.getenv('INVENTORY_CONFIG'), 'tests/inventory_config.yaml', 'Config was not set')
         self.assertEqual(os.getenv('LOOPBACK'), '1', 'Loopback was not set correctly')
         self.assertEqual(os.getenv('SLEEP'), '180', 'Sleep time was not set correctly')
+        self.assertEqual(os.getenv('AUTH_SOURCE'), 'Local', 'Auth source should default to Local when not specified')
         self.assertEqual(logger.level, 30)
 
     def test_env_params(self):
@@ -92,6 +95,15 @@ class TestLaunchInventory(TestCase):
         self.assertEqual(os.getenv('INVENTORY_CONFIG'), 'tests/inventory_config.yaml', 'Config was not set')
         self.assertEqual(os.getenv('LOOPBACK'), '0', 'Loopback was not set correctly')
         self.assertEqual(os.getenv('SLEEP'), '180', 'Sleep time was not set correctly')
+        self.assertEqual(os.getenv('AUTH_SOURCE'), 'Local', 'Auth source should default to Local when not specified')
+
+    def test_with_auth_source(self):
+        os.environ.clear()
+        sys.argv = ['prog', '--user', 'testuser', '--password', 'testpw31!', '--port', '1234',
+                    '-t', 'vrops-vcenter-test.company.com', '-m', 'tests/inventory_config.yaml', '--auth-source', 'SSO']
+
+        parse_params(logger)
+        self.assertEqual(os.getenv('AUTH_SOURCE'), 'SSO', 'Auth source from CLI was not set correctly')
 
     def test_with_bogus_options(self):
         os.environ.clear()

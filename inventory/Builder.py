@@ -15,6 +15,7 @@ class InventoryBuilder:
         self.sleep = sleep
         self._user = os.environ["USER"]
         self._password = os.environ["PASSWORD"]
+        self._auth_source = os.environ.get("AUTH_SOURCE", "Local")
         self.vcenter_dict = dict()
         self.nsxt_dict = dict()
         self.vcops_dict = dict()
@@ -91,7 +92,8 @@ class InventoryBuilder:
     def query_vrops(self, target, vrops_short_name, iteration):
         vrops = Vrops()
         logger.info(f'Querying {target}')
-        token, self.response_codes[target]["token"], self.response_times[target]["token"] = Vrops.get_token(target=target)
+        token, self.response_codes[target]["token"], self.response_times[target]["token"] = \
+            Vrops.get_token(target=target, auth_source=self._auth_source)
         if not token:
             logger.warning(f'retrying connection to {target} in next iteration {self.iteration + 1}')
             return False
